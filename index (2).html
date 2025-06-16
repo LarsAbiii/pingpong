@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ping Pong Classic</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      canvas {
+        background: black;
+        display: block;
+        margin: 50px auto;
+        border: 4px solid white;
+      }
+      body {
+        background: #111;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Ping Pong Classic</h1>
+    <p>Steuerung: Spieler links (W/S), Spieler rechts (Pfeil ↑/↓)</p>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <script>
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const paddleWidth = 10,
+        paddleHeight = 100;
+      const ballSize = 10;
+      let leftScore = 0,
+        rightScore = 0;
+
+      const leftPaddle = {
+        x: 10,
+        y: canvas.height / 2 - paddleHeight / 2,
+        dy: 0,
+      };
+      const rightPaddle = {
+        x: canvas.width - 20,
+        y: canvas.height / 2 - paddleHeight / 2,
+        dy: 0,
+      };
+
+      const ball = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        dx: 4 * (Math.random() > 0.5 ? 1 : -1),
+        dy: 4 * (Math.random() * 2 - 1),
+      };
+
+      function drawRect(x, y, w, h, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h);
+      }
+
+      function drawBall() {
+        ctx.fillStyle = "white";
+        ctx.fillRect(ball.x, ball.y, ballSize, ballSize);
+      }
+
+      function drawNet() {
+        for (let i = 0; i < canvas.height; i += 20) {
+          drawRect(canvas.width / 2 - 1, i, 2, 10, "white");
+        }
+      }
+
+      function drawScores() {
+        ctx.font = "30px Arial";
+        ctx.fillText(leftScore, canvas.width / 4, 30);
+        ctx.fillText(rightScore, (3 * canvas.width) / 4, 30);
+      }
+
+      function update() {
+        // Ball Bewegung
+        ball.x += ball.dx;
+        ball.y += ball.dy;
+
+        // Ball Wandkollision
+        if (ball.y <= 0 || ball.y + ballSize >= canvas.height) {
+          ball.dy *= -1;
+        }
+
+        // Ball Paddle Kollision
+        if (
+          ball.x <= leftPaddle.x + paddleWidth &&
+          ball.y + ballSize >= leftPaddle.y &&
+          ball.y <= leftPaddle.y + paddleHeight
+        ) {
+          ball.dx *= -1;
+          ball.x = leftPaddle.x + paddleWidth; // Verhindert kleben
+        }
+
+        if (
+          ball.x + ballSize >= rightPaddle.x &&
+          ball.y + ballSize >= rightPaddle.y &&
+          ball.y <= rightPaddle.y + paddleHeight
+        ) {
+          ball.dx *= -1;
+          ball.x = rightPaddle.x - ballSize; // Verhindert kleben
+        }
+
+        // Punkte
+        if (ball.x < 0) {
+          rightScore++;
+          resetBall();
+        }
+
+        if (ball.x > canvas.width) {
+          leftScore++;
+          resetBall();
+        }
+
+        // Paddle Bewegung
+        leftPaddle.y += leftPaddle.dy;
+        rightPaddle.y += rightPaddle.dy;
+
+        // Paddle Begrenzung
+        [leftPaddle, rightPaddle].forEach((p) => {
+          if (p.y < 0) p.y = 0;
+          if (p.y + paddleHeight > canvas.height)
+            p.y = canvas.height - paddleHeight;
+        });
+      }
+
+      function resetBall() {
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height / 2;
+        ball.dx *= -1;
+        ball.dy = 4 * (Math.random() * 2 - 1);
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawNet();
+        drawRect(
+          leftPaddle.x,
+          leftPaddle.y,
+          paddleWidth,
+          paddleHeight,
+          "white"
+        );
+        drawRect(
+          rightPaddle.x,
+          rightPaddle.y,
+          paddleWidth,
+          paddleHeight,
+          "white"
+        );
+        drawBall();
+        drawScores();
+      }
+
+      function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // Steuerung
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "w") leftPaddle.dy = -6;
+        if (e.key === "s") leftPaddle.dy = 6;
+        if (e.key === "ArrowUp") rightPaddle.dy = -6;
+        if (e.key === "ArrowDown") rightPaddle.dy = 6;
+      });
+
+      document.addEventListener("keyup", (e) => {
+        if (e.key === "w" || e.key === "s") leftPaddle.dy = 0;
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") rightPaddle.dy = 0;
+      });
+
+      loop();
+    </script>
+  </body>
+</html>
